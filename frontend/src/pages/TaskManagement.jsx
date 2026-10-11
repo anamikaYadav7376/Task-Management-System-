@@ -17,8 +17,9 @@ function TaskManagement() {
   const [assignedUser, setAssignedUser] = useState('');
 
   const [editingTaskId, setEditingTaskId] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [deletingId, setDeletingId] = useState(null);
 
-  // Search and filter state
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [priorityFilter, setPriorityFilter] = useState('');
@@ -74,17 +75,41 @@ function TaskManagement() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (submitting) return;
+
     setErrorMessage('');
     setSuccessMessage('');
 
+    if (!title || !title.trim()) {
+      setErrorMessage('Task title is required.');
+      return;
+    }
+
+    if (!description || !description.trim()) {
+      setErrorMessage('Task description is required.');
+      return;
+    }
+
+    if (!assignedUser || !assignedUser.trim()) {
+      setErrorMessage('Assigned user is required.');
+      return;
+    }
+
+    if (!dueDate) {
+      setErrorMessage('Due date is required.');
+      return;
+    }
+
+    setSubmitting(true);
+
     const taskPayload = {
-      title,
-      description,
+      title: title.trim(),
+      description: description.trim(),
       status,
       priority,
       dueDate,
-      assignedUser,
-      assignedTo: assignedUser,
+      assignedUser: assignedUser.trim(),
+      assignedTo: assignedUser.trim(),
     };
 
     try {
@@ -101,6 +126,8 @@ function TaskManagement() {
       setTimeout(() => setSuccessMessage(''), 3000);
     } catch (error) {
       setErrorMessage(error.message || 'Failed to save task.');
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -118,8 +145,13 @@ function TaskManagement() {
   };
 
   const handleDeleteClick = async (taskId) => {
+    if (deletingId) return;
     const confirmDelete = window.confirm('Are you sure you want to delete this task?');
     if (!confirmDelete) return;
+
+    setDeletingId(taskId);
+    setErrorMessage('');
+    setSuccessMessage('');
 
     try {
       await deleteTask(taskId);
@@ -128,6 +160,8 @@ function TaskManagement() {
       setTimeout(() => setSuccessMessage(''), 3000);
     } catch (error) {
       setErrorMessage(error.message || 'Failed to delete task.');
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -249,11 +283,18 @@ function TaskManagement() {
           </div>
 
           <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
-            <button type="submit" className="btn btn-primary">
-              {editingTaskId ? 'Update Task' : 'Add Task'}
+            <button type="submit" className="btn btn-primary" disabled={submitting}>
+              {submitting
+                ? (editingTaskId ? 'Updating Task...' : 'Adding Task...')
+                : (editingTaskId ? 'Update Task' : 'Add Task')}
             </button>
             {editingTaskId && (
-              <button type="button" onClick={resetForm} className="btn btn-secondary">
+              <button
+                type="button"
+                onClick={resetForm}
+                className="btn btn-secondary"
+                disabled={submitting}
+              >
                 Cancel Edit
               </button>
             )}
@@ -365,8 +406,9 @@ function TaskManagement() {
                           <button
                             onClick={() => handleDeleteClick(taskId)}
                             className="btn btn-danger btn-sm"
+                            disabled={deletingId === taskId}
                           >
-                            Delete
+                            {deletingId === taskId ? 'Deleting...' : 'Delete'}
                           </button>
                         </div>
                       </td>

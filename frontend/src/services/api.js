@@ -8,17 +8,26 @@ const getHeaders = () => {
   };
 };
 
+const handleResponse = async (response, defaultError) => {
+  let data = {};
+  try {
+    data = await response.json();
+  } catch (err) {
+    data = {};
+  }
+  if (!response.ok) {
+    throw new Error(data.message || data.error || defaultError);
+  }
+  return data;
+};
+
 export const loginUser = async (credentials) => {
   const response = await fetch(`${API_URL}/auth/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(credentials)
   });
-  const data = await response.json();
-  if (!response.ok) {
-    throw new Error(data.message || 'Login failed');
-  }
-  return data;
+  return handleResponse(response, 'Login failed');
 };
 
 export const registerUser = async (userData) => {
@@ -27,11 +36,7 @@ export const registerUser = async (userData) => {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(userData)
   });
-  const data = await response.json();
-  if (!response.ok) {
-    throw new Error(data.message || 'Registration failed');
-  }
-  return data;
+  return handleResponse(response, 'Registration failed');
 };
 
 export const getTasks = async () => {
@@ -39,11 +44,7 @@ export const getTasks = async () => {
     method: 'GET',
     headers: getHeaders()
   });
-  const data = await response.json();
-  if (!response.ok) {
-    throw new Error(data.message || 'Failed to fetch tasks');
-  }
-  return data;
+  return handleResponse(response, 'Failed to fetch tasks');
 };
 
 export const createTask = async (taskData) => {
@@ -52,11 +53,7 @@ export const createTask = async (taskData) => {
     headers: getHeaders(),
     body: JSON.stringify(taskData)
   });
-  const data = await response.json();
-  if (!response.ok) {
-    throw new Error(data.message || 'Failed to create task');
-  }
-  return data;
+  return handleResponse(response, 'Failed to create task');
 };
 
 export const updateTask = async (id, taskData) => {
@@ -65,11 +62,7 @@ export const updateTask = async (id, taskData) => {
     headers: getHeaders(),
     body: JSON.stringify(taskData)
   });
-  const data = await response.json();
-  if (!response.ok) {
-    throw new Error(data.message || 'Failed to update task');
-  }
-  return data;
+  return handleResponse(response, 'Failed to update task');
 };
 
 export const deleteTask = async (id) => {
@@ -77,11 +70,7 @@ export const deleteTask = async (id) => {
     method: 'DELETE',
     headers: getHeaders()
   });
-  const data = await response.json();
-  if (!response.ok) {
-    throw new Error(data.message || 'Failed to delete task');
-  }
-  return data;
+  return handleResponse(response, 'Failed to delete task');
 };
 
 export const updateTaskStatus = async (id, status) => {
@@ -90,9 +79,5 @@ export const updateTaskStatus = async (id, status) => {
     headers: getHeaders(),
     body: JSON.stringify({ status })
   });
-  const data = await response.json();
-  if (!response.ok) {
-    throw new Error(data.message || 'Failed to update task status');
-  }
-  return data;
+  return handleResponse(response, 'Failed to update task status');
 };

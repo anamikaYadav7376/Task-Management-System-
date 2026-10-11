@@ -8,8 +8,8 @@ function TaskDashboard({ user }) {
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
+  const [updatingTaskId, setUpdatingTaskId] = useState(null);
 
-  // Search and filter state
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [priorityFilter, setPriorityFilter] = useState('');
@@ -58,6 +58,11 @@ function TaskDashboard({ user }) {
   }, [user]);
 
   const handleStatusChange = async (taskId, newStatus) => {
+    if (updatingTaskId === taskId) return;
+    setUpdatingTaskId(taskId);
+    setErrorMessage('');
+    setSuccessMessage('');
+
     try {
       await updateTaskStatus(taskId, newStatus);
       setSuccessMessage('Task status updated successfully!');
@@ -70,6 +75,8 @@ function TaskDashboard({ user }) {
     } catch (error) {
       setErrorMessage(error.message || 'Could not update task status.');
       setTimeout(() => setErrorMessage(''), 3000);
+    } finally {
+      setUpdatingTaskId(null);
     }
   };
 
@@ -200,11 +207,17 @@ function TaskDashboard({ user }) {
                       style={{ padding: '4px 8px', fontSize: '13px', width: 'auto' }}
                       value={task.status || 'Pending'}
                       onChange={(e) => handleStatusChange(taskId, e.target.value)}
+                      disabled={updatingTaskId === taskId}
                     >
                       <option value="Pending">Pending</option>
                       <option value="In Progress">In Progress</option>
                       <option value="Completed">Completed</option>
                     </select>
+                    {updatingTaskId === taskId && (
+                      <span style={{ fontSize: '12px', color: '#64748b', marginLeft: '6px' }}>
+                        Updating...
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>
