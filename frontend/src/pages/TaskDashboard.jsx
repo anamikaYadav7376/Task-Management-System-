@@ -9,7 +9,6 @@ function TaskDashboard({ user }) {
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const [updatingTaskId, setUpdatingTaskId] = useState(null);
-
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [priorityFilter, setPriorityFilter] = useState('');
@@ -19,8 +18,13 @@ function TaskDashboard({ user }) {
     setLoading(true);
     setErrorMessage('');
     try {
-      const data = await getTasks();
-      const taskList = Array.isArray(data) ? data : (data.tasks || []);
+      const response = await getTasks();
+      const data = response?.data ?? response;
+      const taskList = Array.isArray(data)
+        ? data
+        : Array.isArray(data?.tasks)
+          ? data.tasks
+          : [];
 
       const isAdmin = Boolean(user && user.role && user.role.toLowerCase() === 'admin');
 
@@ -47,7 +51,11 @@ function TaskDashboard({ user }) {
         setTasks(taskList);
       }
     } catch (error) {
-      setErrorMessage(error.message || 'Failed to load tasks from server.');
+      setErrorMessage(
+        error?.response?.data?.message ||
+        error?.message ||
+        'Failed to load tasks from server.'
+      );
     } finally {
       setLoading(false);
     }

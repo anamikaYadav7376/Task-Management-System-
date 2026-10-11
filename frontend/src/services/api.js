@@ -39,6 +39,18 @@ export const registerUser = async (userData) => {
   return handleResponse(response, 'Registration failed');
 };
 
+export const getUsers = async () => {
+  const response = await fetch(`${API_URL}/auth/users`, {
+    method: 'GET',
+    headers: getHeaders()
+  });
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.message || 'Failed to fetch users');
+  }
+  return data;
+};
+
 export const getTasks = async () => {
   const response = await fetch(`${API_URL}/tasks`, {
     method: 'GET',

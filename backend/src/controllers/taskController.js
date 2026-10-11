@@ -80,12 +80,6 @@ const taskController = {
                 });
             }
 
-            if (!assignedTo) {
-                return res.status(400).json({
-                    message: "Please provide assignedTo user ID"
-                });
-            }
-
             if (status !== undefined && status !== null && status !== "" && !allowedStatuses.includes(status)) {
                 return res.status(400).json({
                     message: "Invalid status. Allowed values are: Pending, In Progress, Completed"
@@ -106,13 +100,16 @@ const taskController = {
                 }
             }
 
-            if (!mongoose.Types.ObjectId.isValid(assignedTo)) {
-                return res.status(400).json({ message: "Invalid user ID format for assignedTo" });
-            }
-
-            const assignedUser = await User.findById(assignedTo);
-            if (!assignedUser) {
-                return res.status(404).json({ message: "Assigned user not found" });
+            let validAssignedTo = null;
+            if (assignedTo && assignedTo !== "" && assignedTo !== "unassigned") {
+                if (!mongoose.Types.ObjectId.isValid(assignedTo)) {
+                    return res.status(400).json({ message: "Invalid user ID format for assignedTo" });
+                }
+                const assignedUser = await User.findById(assignedTo);
+                if (!assignedUser) {
+                    return res.status(404).json({ message: "Assigned user not found" });
+                }
+                validAssignedTo = assignedUser._id;
             }
 
             const task = await Task.create({
@@ -121,7 +118,7 @@ const taskController = {
                 status: status || "Pending",
                 priority: priority || "Medium",
                 dueDate: dueDate || null,
-                assignedTo,
+                assignedTo: validAssignedTo,
                 createdBy: req.user._id
             });
 
@@ -206,14 +203,18 @@ const taskController = {
                 }
 
                 if (assignedTo !== undefined) {
-                    if (!mongoose.Types.ObjectId.isValid(assignedTo)) {
-                        return res.status(400).json({ message: "Invalid user ID format for assignedTo" });
+                    if (!assignedTo || assignedTo === "" || assignedTo === "unassigned") {
+                        task.assignedTo = null;
+                    } else {
+                        if (!mongoose.Types.ObjectId.isValid(assignedTo)) {
+                            return res.status(400).json({ message: "Invalid user ID format for assignedTo" });
+                        }
+                        const userExists = await User.findById(assignedTo);
+                        if (!userExists) {
+                            return res.status(404).json({ message: "Assigned user not found" });
+                        }
+                        task.assignedTo = userExists._id;
                     }
-                    const userExists = await User.findById(assignedTo);
-                    if (!userExists) {
-                        return res.status(404).json({ message: "Assigned user not found" });
-                    }
-                    task.assignedTo = assignedTo;
                 }
             } else {
                 const assignedId = task.assignedTo ? task.assignedTo.toString() : "";

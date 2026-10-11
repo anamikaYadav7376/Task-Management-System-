@@ -95,7 +95,7 @@ describe('Task Input Validation and Error Handling (Issue #8)', () => {
     assert.match(res.body.message, /Task description is required/);
   });
 
-  it('rejects task creation without assignedTo user', async () => {
+  it('allows task creation without assignedTo user (unassigned)', async () => {
     const req = {
       body: {
         title: 'Valid Title',
@@ -105,8 +105,8 @@ describe('Task Input Validation and Error Handling (Issue #8)', () => {
     };
     const res = createMockRes();
     await taskController.createTask(req, res);
-    assert.equal(res.statusCode, 400);
-    assert.match(res.body.message, /assignedTo/);
+    assert.equal(res.statusCode, 201);
+    assert.equal(res.body.task.assignedTo, null);
   });
 
   it('rejects task creation with invalid assignedTo format', async () => {
