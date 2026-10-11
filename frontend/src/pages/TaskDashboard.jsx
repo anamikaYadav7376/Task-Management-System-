@@ -9,6 +9,69 @@ function TaskDashboard({ user }) {
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
 
+<<<<<<< HEAD
+  // const fetchTasks = async () => {
+  //   setLoading(true);
+  //   setErrorMessage('');
+  //   try {
+  //     const data = await getTasks();
+  //     const taskList = Array.isArray(data) ? data : (data.tasks || []);
+
+  //     if (user && user.role !== 'Admin') {
+  //       const myTasks = taskList.filter((task) => {
+  //         const assignee = task.assignedUser || task.assignedTo || '';
+  //         return (
+  //           assignee.toLowerCase() === (user.email || '').toLowerCase() ||
+  //           assignee.toLowerCase() === (user.name || '').toLowerCase() ||
+  //           assignee === user._id ||
+  //           assignee === user.id
+  //         );
+  //       });
+  //       setTasks(myTasks);
+  //     } else {
+  //       setTasks(taskList);
+  //     }
+  //   } catch (error) {
+  //     setErrorMessage(error.message || 'Failed to load tasks from server.');
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+const fetchTasks = async () => {
+  setLoading(true);
+  setErrorMessage('');
+
+  try {
+    const response = await getTasks();
+
+    const data = response?.data ?? response;
+    const taskList = Array.isArray(data)
+      ? data
+      : Array.isArray(data?.tasks)
+        ? data.tasks
+        : [];
+
+    if (user && user.role !== 'Admin') {
+      const myTasks = taskList.filter((task) => {
+        const assignee =
+          task.assignedUser ||
+          task.assignedTo ||
+          '';
+
+        return (
+          assignee.toLowerCase() ===
+            (user.email || '').toLowerCase() ||
+          assignee.toLowerCase() ===
+            (user.name || '').toLowerCase() ||
+          assignee === user._id ||
+          assignee === user.id
+        );
+      });
+
+      setTasks(myTasks);
+    } else {
+      setTasks(taskList);
+=======
   // Search and filter state
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
@@ -50,8 +113,18 @@ function TaskDashboard({ user }) {
       setErrorMessage(error.message || 'Failed to load tasks from server.');
     } finally {
       setLoading(false);
+>>>>>>> main
     }
-  };
+  } catch (error) {
+    setErrorMessage(
+      error?.response?.data?.message ||
+      error?.message ||
+      'Failed to load tasks from server.'
+    );
+  } finally {
+    setLoading(false);
+  }
+};
 
   useEffect(() => {
     fetchTasks();
