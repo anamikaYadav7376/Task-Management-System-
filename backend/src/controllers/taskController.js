@@ -39,7 +39,7 @@ const taskController = {
 
             const isAdmin = req.user.role && req.user.role.toLowerCase() === "admin";
 
-            if (!isAdmin && task.assignedTo._id.toString() !== req.user._id.toString()) {
+            if (!isAdmin && (!task.assignedTo || task.assignedTo._id.toString() !== req.user._id.toString())) {
                 return res.status(403).json({
                     message: "Access denied. You can only view tasks assigned to you."
                 });
@@ -47,7 +47,7 @@ const taskController = {
 
             res.status(200).json({ task });
         } catch (err) {
-            if (err.kind === "ObjectId") {
+            if (err.kind === "ObjectId" || err.name === "CastError") {
                 return res.status(400).json({ message: "Invalid task ID format" });
             }
             console.log(err);
@@ -59,15 +59,19 @@ const taskController = {
         try {
             const { title, description, status, priority, dueDate, assignedTo } = req.body;
 
-            if (!title || !description || !assignedTo) {
+            if (!title || !description) {
                 return res.status(400).json({
-                    message: "Please provide title, description, and assignedTo user ID"
+                    message: "Please provide title and description"
                 });
             }
 
-            const assignedUser = await User.findById(assignedTo);
-            if (!assignedUser) {
-                return res.status(404).json({ message: "Assigned user not found" });
+            let validAssignedTo = null;
+            if (assignedTo && assignedTo !== "" && assignedTo !== "unassigned") {
+                const assignedUser = await User.findById(assignedTo);
+                if (!assignedUser) {
+                    return res.status(404).json({ message: "Assigned user not found" });
+                }
+                validAssignedTo = assignedUser._id;
             }
 
             const task = await Task.create({
@@ -76,7 +80,7 @@ const taskController = {
                 status: status || "Pending",
                 priority: priority || "Medium",
                 dueDate: dueDate || null,
-                assignedTo,
+                assignedTo: validAssignedTo,
                 createdBy: req.user._id
             });
 
@@ -89,7 +93,7 @@ const taskController = {
                 task: populatedTask
             });
         } catch (err) {
-            if (err.kind === "ObjectId") {
+            if (err.kind === "ObjectId" || err.name === "CastError") {
                 return res.status(400).json({ message: "Invalid user ID format for assignedTo" });
             }
             console.log(err);
@@ -125,15 +129,18 @@ const taskController = {
                 if (dueDate !== undefined) task.dueDate = dueDate;
 
                 if (assignedTo !== undefined) {
-                    const userExists = await User.findById(assignedTo);
-                    if (!userExists) {
-                        return res.status(404).json({ message: "Assigned user not found" });
+                    if (!assignedTo || assignedTo === "" || assignedTo === "unassigned") {
+                        task.assignedTo = null;
+                    } else {
+                        const userExists = await User.findById(assignedTo);
+                        if (!userExists) {
+                            return res.status(404).json({ message: "Assigned user not found" });
+                        }
+                        task.assignedTo = userExists._id;
                     }
-                    task.assignedTo = assignedTo;
                 }
             } else {
-                const assignedId = task.assignedTo ? task.assignedTo.toString() : "";
-                if (assignedId !== req.user._id.toString()) {
+                if (!task.assignedTo || task.assignedTo.toString() !== req.user._id.toString()) {
                     return res.status(403).json({
                         message: "Access denied. You can only update tasks assigned to you."
                     });
@@ -235,7 +242,7 @@ const taskController = {
                 deletedTaskId: req.params.id
             });
         } catch (err) {
-            if (err.kind === "ObjectId") {
+            if (err.kind === "ObjectId" || err.name === "CastError") {
                 return res.status(400).json({ message: "Invalid task ID format" });
             }
             console.log(err);
