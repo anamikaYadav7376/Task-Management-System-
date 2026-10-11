@@ -22,7 +22,6 @@ function App() {
     setUser(null);
   };
 
-  // Check both state and localStorage so route transitions are immediate
   const activeUser = user || (() => {
     try {
       const saved = localStorage.getItem('user');

@@ -7,16 +7,13 @@ function TaskDashboard({ user }) {
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
 
-  // Fetch tasks on component mount
   const fetchTasks = async () => {
     setLoading(true);
     setErrorMessage('');
     try {
       const data = await getTasks();
-      // Handle both array response or { tasks: [...] } object response
       const taskList = Array.isArray(data) ? data : (data.tasks || []);
-      
-      // If regular user, display only tasks assigned to them
+
       if (user && user.role !== 'Admin') {
         const myTasks = taskList.filter((task) => {
           const assignee = task.assignedUser || task.assignedTo || '';
@@ -42,13 +39,11 @@ function TaskDashboard({ user }) {
     fetchTasks();
   }, [user]);
 
-  // Handle status update by user
   const handleStatusChange = async (taskId, newStatus) => {
     try {
       await updateTaskStatus(taskId, newStatus);
       setSuccessMessage('Task status updated successfully!');
-      
-      // Update local state directly
+
       setTasks((prevTasks) =>
         prevTasks.map((t) => (t._id === taskId || t.id === taskId ? { ...t, status: newStatus } : t))
       );
@@ -60,14 +55,12 @@ function TaskDashboard({ user }) {
     }
   };
 
-  // Helper for status badge styling
   const getStatusBadgeClass = (status) => {
     if (status === 'Completed') return 'badge badge-completed';
     if (status === 'In Progress') return 'badge badge-in-progress';
     return 'badge badge-pending';
   };
 
-  // Helper for priority badge styling
   const getPriorityBadgeClass = (priority) => {
     if (priority === 'High') return 'badge badge-priority-high';
     if (priority === 'Medium') return 'badge badge-priority-medium';
