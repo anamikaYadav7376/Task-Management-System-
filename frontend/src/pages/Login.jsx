@@ -18,7 +18,6 @@ function Login({ onLogin }) {
     try {
       const data = await loginUser({ email, password });
       
-      // Save auth data in local storage
       if (data.token) {
         localStorage.setItem('token', data.token);
       }
@@ -27,7 +26,6 @@ function Login({ onLogin }) {
         onLogin(data.user);
       }
 
-      // Navigate to tasks dashboard
       navigate('/dashboard');
     } catch (error) {
       setErrorMessage(error.message || 'Login failed. Please check your credentials.');

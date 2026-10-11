@@ -1,6 +1,5 @@
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
-// Helper function to include authorization token in requests
 const getHeaders = () => {
   const token = localStorage.getItem('token');
   return {
@@ -9,7 +8,6 @@ const getHeaders = () => {
   };
 };
 
-// Login user
 export const loginUser = async (credentials) => {
   const response = await fetch(`${API_URL}/auth/login`, {
     method: 'POST',
@@ -23,7 +21,6 @@ export const loginUser = async (credentials) => {
   return data;
 };
 
-// Register user
 export const registerUser = async (userData) => {
   const response = await fetch(`${API_URL}/auth/register`, {
     method: 'POST',
@@ -37,7 +34,6 @@ export const registerUser = async (userData) => {
   return data;
 };
 
-// Fetch tasks from backend
 export const getTasks = async () => {
   const response = await fetch(`${API_URL}/tasks`, {
     method: 'GET',
@@ -50,7 +46,6 @@ export const getTasks = async () => {
   return data;
 };
 
-// Create a new task (Admin)
 export const createTask = async (taskData) => {
   const response = await fetch(`${API_URL}/tasks`, {
     method: 'POST',
@@ -64,7 +59,6 @@ export const createTask = async (taskData) => {
   return data;
 };
 
-// Update task details (Admin)
 export const updateTask = async (id, taskData) => {
   const response = await fetch(`${API_URL}/tasks/${id}`, {
     method: 'PUT',
@@ -78,7 +72,6 @@ export const updateTask = async (id, taskData) => {
   return data;
 };
 
-// Delete a task (Admin)
 export const deleteTask = async (id) => {
   const response = await fetch(`${API_URL}/tasks/${id}`, {
     method: 'DELETE',
@@ -91,7 +84,6 @@ export const deleteTask = async (id) => {
   return data;
 };
 
-// Update task status (User)
 export const updateTaskStatus = async (id, status) => {
   const response = await fetch(`${API_URL}/tasks/${id}/status`, {
     method: 'PATCH',

@@ -7,7 +7,6 @@ function TaskManagement() {
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
 
-  // Form states
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [status, setStatus] = useState('Pending');
@@ -15,10 +14,8 @@ function TaskManagement() {
   const [dueDate, setDueDate] = useState('');
   const [assignedUser, setAssignedUser] = useState('');
   
-  // Track if we are editing an existing task
   const [editingTaskId, setEditingTaskId] = useState(null);
 
-  // Fetch all tasks
   const fetchAllTasks = async () => {
     setLoading(true);
     setErrorMessage('');
@@ -37,7 +34,6 @@ function TaskManagement() {
     fetchAllTasks();
   }, []);
 
-  // Reset form fields
   const resetForm = () => {
     setTitle('');
     setDescription('');
@@ -48,7 +44,6 @@ function TaskManagement() {
     setEditingTaskId(null);
   };
 
-  // Submit handler for adding or updating a task
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErrorMessage('');
@@ -65,11 +60,9 @@ function TaskManagement() {
 
     try {
       if (editingTaskId) {
-        // Update existing task
         await updateTask(editingTaskId, taskPayload);
         setSuccessMessage('Task updated successfully!');
       } else {
-        // Create new task
         await createTask(taskPayload);
         setSuccessMessage('Task created successfully!');
       }
@@ -82,7 +75,6 @@ function TaskManagement() {
     }
   };
 
-  // Populate form with task details for editing
   const handleEditClick = (task) => {
     const taskId = task._id || task.id;
     setEditingTaskId(taskId);
@@ -93,11 +85,9 @@ function TaskManagement() {
     setDueDate(task.dueDate || '');
     setAssignedUser(task.assignedUser || task.assignedTo || '');
 
-    // Scroll up to form
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // Delete a task
   const handleDeleteClick = async (taskId) => {
     const confirmDelete = window.confirm('Are you sure you want to delete this task?');
     if (!confirmDelete) return;
@@ -129,7 +119,6 @@ function TaskManagement() {
       {errorMessage && <div className="alert alert-error">{errorMessage}</div>}
       {successMessage && <div className="alert alert-success">{successMessage}</div>}
 
-      {/* Form: Add or Edit Task */}
       <div className="card">
         <h2 style={{ fontSize: '18px', marginBottom: '16px', color: '#1e293b' }}>
           {editingTaskId ? 'Edit Task' : 'Add New Task'}
@@ -231,7 +220,6 @@ function TaskManagement() {
         </form>
       </div>
 
-      {/* List of All Tasks */}
       <div className="card">
         <h2 style={{ fontSize: '18px', marginBottom: '12px', color: '#1e293b' }}>
           All Tasks ({tasks.length})

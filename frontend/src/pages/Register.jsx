@@ -20,7 +20,6 @@ function Register({ onRegister }) {
     try {
       const data = await registerUser({ name, email, password, role });
       
-      // If backend returns login token and user, log in automatically
       if (data.token) {
         localStorage.setItem('token', data.token);
       }
@@ -31,7 +30,6 @@ function Register({ onRegister }) {
         }
         navigate('/dashboard');
       } else {
-        // Fallback: if backend only created account without token, go to login
         navigate('/login');
       }
     } catch (error) {
