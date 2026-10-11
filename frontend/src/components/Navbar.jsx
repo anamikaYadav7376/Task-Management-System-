@@ -24,6 +24,7 @@ function Navbar({ user, onLogout }) {
 
             <Link to="/dashboard" className="nav-link">
               My Tasks
+              Admin Dashboard
             </Link>
 
             <button onClick={handleLogout} className="btn btn-danger btn-sm">
