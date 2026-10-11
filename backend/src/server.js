@@ -17,8 +17,12 @@ app.get("/", (req, res) => {
     res.json({ message: "Welcome to Task Management System API", status: "Running" });
 });
 
+const { protect } = require("./middleware/authMiddleware");
+const authController = require("./controllers/authController");
+
 app.use("/api/auth", authRoutes);
 app.use("/api/tasks", taskRoutes);
+app.get("/api/users", protect, authController.getUsers);
 
 app.use((req, res) => {
     res.status(404).json({ message: "Endpoint not found" });
