@@ -86,6 +86,19 @@ const authController = {
       console.log(err);
       res.status(500).json({ message: "Server error during login", error: err.message });
     }
+  },
+
+  getUsers: async (req, res) => {
+    try {
+      const users = await User.find({}, "_id name email role createdAt").sort({ name: 1 });
+      res.status(200).json({
+        count: users.length,
+        users
+      });
+    } catch (err) {
+      console.log(err);
+      res.status(500).json({ message: "Server error while fetching users", error: err.message });
+    }
   }
 };
 

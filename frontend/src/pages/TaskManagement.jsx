@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { getTasks, createTask, updateTask, deleteTask } from '../services/api';
+import { getTasks, createTask, updateTask, deleteTask, getUsers } from '../services/api';
 import TaskFilterBar from '../components/TaskFilterBar';
 import { filterTasks, getUniqueAssignees, getTaskAssigneeName } from '../utils/filterTasks';
 
 function TaskManagement() {
   const [tasks, setTasks] = useState([]);
+  const [teamMembers, setTeamMembers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
@@ -14,7 +15,7 @@ function TaskManagement() {
   const [status, setStatus] = useState('Pending');
   const [priority, setPriority] = useState('Medium');
   const [dueDate, setDueDate] = useState('');
-  const [assignedUser, setAssignedUser] = useState('');
+  const [assignedTo, setAssignedTo] = useState('');
 
   const [editingTaskId, setEditingTaskId] = useState(null);
 
@@ -38,8 +39,19 @@ function TaskManagement() {
     }
   };
 
+  const fetchTeamMembers = async () => {
+    try {
+      const data = await getUsers();
+      const memberList = Array.isArray(data) ? data : (data.users || []);
+      setTeamMembers(memberList);
+    } catch (error) {
+      console.error('Failed to load team members:', error);
+    }
+  };
+
   useEffect(() => {
     fetchAllTasks();
+    fetchTeamMembers();
   }, []);
 
   const resetForm = () => {
@@ -48,7 +60,7 @@ function TaskManagement() {
     setStatus('Pending');
     setPriority('Medium');
     setDueDate('');
-    setAssignedUser('');
+    setAssignedTo('');
     setEditingTaskId(null);
   };
 
@@ -83,8 +95,7 @@ function TaskManagement() {
       status,
       priority,
       dueDate,
-      assignedUser,
-      assignedTo: assignedUser,
+      assignedTo: assignedTo ? assignedTo : null,
     };
 
     try {
@@ -111,8 +122,12 @@ function TaskManagement() {
     setDescription(task.description || '');
     setStatus(task.status || 'Pending');
     setPriority(task.priority || 'Medium');
-    setDueDate(task.dueDate || '');
-    setAssignedUser(getTaskAssigneeName(task));
+    setDueDate(task.dueDate ? task.dueDate.split('T')[0] : '');
+    
+    const assignedId = task.assignedTo && typeof task.assignedTo === 'object'
+      ? (task.assignedTo._id || task.assignedTo.id)
+      : (task.assignedTo || '');
+    setAssignedTo(assignedId || '');
 
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -175,16 +190,24 @@ function TaskManagement() {
             </div>
 
             <div className="form-group">
-              <label htmlFor="assignedUser">Assigned User (Email / Username) *</label>
-              <input
-                type="text"
-                id="assignedUser"
+              <label htmlFor="assignedTo">Assign To Team Member</label>
+              <select
+                id="assignedTo"
+                name="assignedTo"
                 className="form-control"
-                placeholder="e.g. student@college.edu"
-                value={assignedUser}
-                onChange={(e) => setAssignedUser(e.target.value)}
-                required
-              />
+                value={assignedTo}
+                onChange={(e) => setAssignedTo(e.target.value)}
+              >
+                <option value="">Unassigned</option>
+                {teamMembers.map((member) => {
+                  const memberId = member._id || member.id;
+                  return (
+                    <option key={memberId} value={memberId}>
+                      {member.name} ({member.email})
+                    </option>
+                  );
+                })}
+              </select>
             </div>
           </div>
 
