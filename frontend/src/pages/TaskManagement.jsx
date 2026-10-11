@@ -1,5 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { getTasks, createTask, updateTask, deleteTask } from '../services/api';
+import TaskFilterBar from '../components/TaskFilterBar';
+import { filterTasks, getUniqueAssignees, getTaskAssigneeName } from '../utils/filterTasks';
 
 function TaskManagement() {
   const [tasks, setTasks] = useState([]);
@@ -13,8 +15,14 @@ function TaskManagement() {
   const [priority, setPriority] = useState('Medium');
   const [dueDate, setDueDate] = useState('');
   const [assignedUser, setAssignedUser] = useState('');
-  
+
   const [editingTaskId, setEditingTaskId] = useState(null);
+
+  // Search and filter state
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+  const [priorityFilter, setPriorityFilter] = useState('');
+  const [assigneeFilter, setAssigneeFilter] = useState('');
 
   const fetchAllTasks = async () => {
     setLoading(true);
@@ -44,6 +52,26 @@ function TaskManagement() {
     setEditingTaskId(null);
   };
 
+  const handleClearFilters = () => {
+    setSearchTerm('');
+    setStatusFilter('');
+    setPriorityFilter('');
+    setAssigneeFilter('');
+  };
+
+  const assigneeOptions = useMemo(() => {
+    return getUniqueAssignees(tasks);
+  }, [tasks]);
+
+  const filteredTasks = useMemo(() => {
+    return filterTasks(tasks, {
+      searchTerm,
+      statusFilter,
+      priorityFilter,
+      assigneeFilter,
+    });
+  }, [tasks, searchTerm, statusFilter, priorityFilter, assigneeFilter]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErrorMessage('');
@@ -55,7 +83,8 @@ function TaskManagement() {
       status,
       priority,
       dueDate,
-      assignedUser
+      assignedUser,
+      assignedTo: assignedUser,
     };
 
     try {
@@ -83,7 +112,7 @@ function TaskManagement() {
     setStatus(task.status || 'Pending');
     setPriority(task.priority || 'Medium');
     setDueDate(task.dueDate || '');
-    setAssignedUser(task.assignedUser || task.assignedTo || '');
+    setAssignedUser(getTaskAssigneeName(task));
 
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -95,7 +124,7 @@ function TaskManagement() {
     try {
       await deleteTask(taskId);
       setSuccessMessage('Task deleted successfully!');
-      setTasks((prevTasks) => prevTasks.filter((t) => (t._id !== taskId && t.id !== taskId)));
+      setTasks((prevTasks) => prevTasks.filter((t) => t._id !== taskId && t.id !== taskId));
       setTimeout(() => setSuccessMessage(''), 3000);
     } catch (error) {
       setErrorMessage(error.message || 'Failed to delete task.');
@@ -125,7 +154,13 @@ function TaskManagement() {
         </h2>
 
         <form onSubmit={handleSubmit}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px' }}>
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+              gap: '16px',
+            }}
+          >
             <div className="form-group">
               <label htmlFor="taskTitle">Task Title *</label>
               <input
@@ -165,7 +200,13 @@ function TaskManagement() {
             />
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '16px' }}>
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+              gap: '16px',
+            }}
+          >
             <div className="form-group">
               <label htmlFor="status">Status</label>
               <select
@@ -220,6 +261,22 @@ function TaskManagement() {
         </form>
       </div>
 
+      {/* Task Filters Bar */}
+      <TaskFilterBar
+        searchTerm={searchTerm}
+        onSearchChange={setSearchTerm}
+        statusFilter={statusFilter}
+        onStatusChange={setStatusFilter}
+        priorityFilter={priorityFilter}
+        onPriorityChange={setPriorityFilter}
+        assigneeFilter={assigneeFilter}
+        onAssigneeChange={setAssigneeFilter}
+        onClearFilters={handleClearFilters}
+        assigneeOptions={assigneeOptions}
+        totalCount={tasks.length}
+        filteredCount={filteredTasks.length}
+      />
+
       <div className="card">
         <h2 style={{ fontSize: '18px', marginBottom: '12px', color: '#1e293b' }}>
           All Tasks ({tasks.length})
@@ -229,6 +286,21 @@ function TaskManagement() {
           <div className="empty-state">Loading tasks...</div>
         ) : tasks.length === 0 ? (
           <div className="empty-state">No tasks created yet. Use the form above to add a task.</div>
+        ) : filteredTasks.length === 0 ? (
+          <div className="empty-state">
+            <h3>No tasks found</h3>
+            <p style={{ marginTop: '6px', marginBottom: '14px' }}>
+              No tasks match your current search and filter criteria.
+            </p>
+            <button
+              type="button"
+              onClick={handleClearFilters}
+              className="btn btn-secondary btn-sm"
+              id="clearFiltersEmptyBtn"
+            >
+              Clear All Filters
+            </button>
+          </div>
         ) : (
           <div className="table-responsive">
             <table className="task-table">
@@ -244,8 +316,10 @@ function TaskManagement() {
                 </tr>
               </thead>
               <tbody>
-                {tasks.map((task) => {
+                {filteredTasks.map((task) => {
                   const taskId = task._id || task.id;
+                  const assigneeName = getTaskAssigneeName(task) || 'Unassigned';
+
                   return (
                     <tr key={taskId}>
                       <td>
@@ -253,29 +327,33 @@ function TaskManagement() {
                       </td>
                       <td style={{ maxWidth: '240px' }}>{task.description}</td>
                       <td>
-                        <span className={`badge ${
-                          task.status === 'Completed'
-                            ? 'badge-completed'
-                            : task.status === 'In Progress'
-                            ? 'badge-in-progress'
-                            : 'badge-pending'
-                        }`}>
+                        <span
+                          className={`badge ${
+                            task.status === 'Completed'
+                              ? 'badge-completed'
+                              : task.status === 'In Progress'
+                              ? 'badge-in-progress'
+                              : 'badge-pending'
+                          }`}
+                        >
                           {task.status || 'Pending'}
                         </span>
                       </td>
                       <td>
-                        <span className={`badge ${
-                          task.priority === 'High'
-                            ? 'badge-priority-high'
-                            : task.priority === 'Medium'
-                            ? 'badge-priority-medium'
-                            : 'badge-priority-low'
-                        }`}>
+                        <span
+                          className={`badge ${
+                            task.priority === 'High'
+                              ? 'badge-priority-high'
+                              : task.priority === 'Medium'
+                              ? 'badge-priority-medium'
+                              : 'badge-priority-low'
+                          }`}
+                        >
                           {task.priority || 'Low'}
                         </span>
                       </td>
                       <td>{task.dueDate || '-'}</td>
-                      <td>{task.assignedUser || task.assignedTo || 'Unassigned'}</td>
+                      <td>{assigneeName}</td>
                       <td>
                         <div style={{ display: 'flex', gap: '6px' }}>
                           <button
