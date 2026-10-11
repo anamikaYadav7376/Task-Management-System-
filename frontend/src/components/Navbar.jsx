@@ -23,6 +23,7 @@ function Navbar({ user, onLogout }) {
             </span>
 
             <Link to="/dashboard" className="nav-link">
+              My Tasks
               Admin Dashboard
             </Link>
 

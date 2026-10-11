@@ -4,7 +4,7 @@ import Navbar from './components/Navbar';
 import Landing from './pages/Landing';
 import Login from './pages/Login';
 import Register from './pages/Register';
-import TaskManagement from './pages/TaskManagement';
+import TaskDashboard from './pages/TaskDashboard';
 
 function App() {
   const [user, setUser] = useState(() => {
@@ -50,11 +50,7 @@ function App() {
 
           <Route
             path="/dashboard"
-            element={activeUser ? <TaskManagement /> : <Navigate to="/login" />}
-          />
-          <Route
-            path="/manage"
-            element={activeUser ? <TaskManagement /> : <Navigate to="/login" />}
+            element={activeUser ? <TaskDashboard user={activeUser} /> : <Navigate to="/login" />}
           />
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
