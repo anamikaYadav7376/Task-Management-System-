@@ -22,7 +22,9 @@ function TaskDashboard({ user }) {
       const data = await getTasks();
       const taskList = Array.isArray(data) ? data : (data.tasks || []);
 
-      if (user && user.role !== 'Admin') {
+      const isAdmin = Boolean(user && user.role && user.role.toLowerCase() === 'admin');
+
+      if (!isAdmin) {
         const myTasks = taskList.filter((task) => {
           const assignee = getTaskAssigneeName(task);
           const userEmail = (user.email || '').toLowerCase();
