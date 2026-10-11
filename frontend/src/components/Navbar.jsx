@@ -23,9 +23,13 @@ function Navbar({ user, onLogout }) {
             </span>
 
             <Link to="/dashboard" className="nav-link">
-              My Tasks
-              Admin Dashboard
+              Dashboard
             </Link>
+            {user && (user.role === 'Admin' || user.role === 'admin') && (
+              <Link to="/manage" className="nav-link">
+                Manage Tasks
+              </Link>
+            )}
 
             <button onClick={handleLogout} className="btn btn-danger btn-sm">
               Logout

@@ -5,6 +5,7 @@ import Landing from './pages/Landing';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import TaskDashboard from './pages/TaskDashboard';
+import TaskManagement from './pages/TaskManagement';
 
 function App() {
   const [user, setUser] = useState(() => {
@@ -51,6 +52,10 @@ function App() {
           <Route
             path="/dashboard"
             element={activeUser ? <TaskDashboard user={activeUser} /> : <Navigate to="/login" />}
+          />
+          <Route
+            path="/manage"
+            element={activeUser ? <TaskManagement user={activeUser} /> : <Navigate to="/login" />}
           />
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
