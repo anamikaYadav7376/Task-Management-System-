@@ -1,5 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { getTasks, updateTaskStatus } from '../services/api';
+import TaskFilterBar from '../components/TaskFilterBar';
+import { filterTasks, getUniqueAssignees, getTaskAssigneeName } from '../utils/filterTasks';
 
 function TaskDashboard({ user }) {
   const [tasks, setTasks] = useState([]);
@@ -7,6 +9,7 @@ function TaskDashboard({ user }) {
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
 
+<<<<<<< HEAD
   // const fetchTasks = async () => {
   //   setLoading(true);
   //   setErrorMessage('');
@@ -68,6 +71,49 @@ const fetchTasks = async () => {
       setTasks(myTasks);
     } else {
       setTasks(taskList);
+=======
+  // Search and filter state
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+  const [priorityFilter, setPriorityFilter] = useState('');
+  const [assigneeFilter, setAssigneeFilter] = useState('');
+
+  const fetchTasks = async () => {
+    setLoading(true);
+    setErrorMessage('');
+    try {
+      const data = await getTasks();
+      const taskList = Array.isArray(data) ? data : (data.tasks || []);
+
+      const isAdmin = Boolean(user && user.role && user.role.toLowerCase() === 'admin');
+
+      if (!isAdmin) {
+        const myTasks = taskList.filter((task) => {
+          const assignee = getTaskAssigneeName(task);
+          const userEmail = (user.email || '').toLowerCase();
+          const userName = (user.name || '').toLowerCase();
+          const userId = user._id || user.id || '';
+
+          const assignedToObj = task.assignedTo && typeof task.assignedTo === 'object' ? task.assignedTo : null;
+          const assignedId = (assignedToObj ? (assignedToObj._id || assignedToObj.id) : '') || '';
+
+          return (
+            (assignee && assignee.toLowerCase() === userEmail) ||
+            (assignee && assignee.toLowerCase() === userName) ||
+            (assignedId && userId && assignedId.toString() === userId.toString()) ||
+            (task.assignedUser && task.assignedUser.toLowerCase() === userEmail) ||
+            (task.assignedUser && task.assignedUser.toLowerCase() === userName)
+          );
+        });
+        setTasks(myTasks);
+      } else {
+        setTasks(taskList);
+      }
+    } catch (error) {
+      setErrorMessage(error.message || 'Failed to load tasks from server.');
+    } finally {
+      setLoading(false);
+>>>>>>> main
     }
   } catch (error) {
     setErrorMessage(
@@ -100,6 +146,26 @@ const fetchTasks = async () => {
     }
   };
 
+  const handleClearFilters = () => {
+    setSearchTerm('');
+    setStatusFilter('');
+    setPriorityFilter('');
+    setAssigneeFilter('');
+  };
+
+  const assigneeOptions = useMemo(() => {
+    return getUniqueAssignees(tasks);
+  }, [tasks]);
+
+  const filteredTasks = useMemo(() => {
+    return filterTasks(tasks, {
+      searchTerm,
+      statusFilter,
+      priorityFilter,
+      assigneeFilter,
+    });
+  }, [tasks, searchTerm, statusFilter, priorityFilter, assigneeFilter]);
+
   const getStatusBadgeClass = (status) => {
     if (status === 'Completed') return 'badge badge-completed';
     if (status === 'In Progress') return 'badge badge-in-progress';
@@ -129,6 +195,22 @@ const fetchTasks = async () => {
       {errorMessage && <div className="alert alert-error">{errorMessage}</div>}
       {successMessage && <div className="alert alert-success">{successMessage}</div>}
 
+      {/* Search and Filters Bar */}
+      <TaskFilterBar
+        searchTerm={searchTerm}
+        onSearchChange={setSearchTerm}
+        statusFilter={statusFilter}
+        onStatusChange={setStatusFilter}
+        priorityFilter={priorityFilter}
+        onPriorityChange={setPriorityFilter}
+        assigneeFilter={assigneeFilter}
+        onAssigneeChange={setAssigneeFilter}
+        onClearFilters={handleClearFilters}
+        assigneeOptions={assigneeOptions}
+        totalCount={tasks.length}
+        filteredCount={filteredTasks.length}
+      />
+
       {loading ? (
         <div className="empty-state">Loading your tasks...</div>
       ) : tasks.length === 0 ? (
@@ -136,10 +218,26 @@ const fetchTasks = async () => {
           <h3>No tasks assigned</h3>
           <p style={{ marginTop: '6px' }}>You currently have no tasks assigned to you.</p>
         </div>
+      ) : filteredTasks.length === 0 ? (
+        <div className="empty-state">
+          <h3>No tasks found</h3>
+          <p style={{ marginTop: '6px', marginBottom: '14px' }}>
+            No tasks match your current search and filter criteria.
+          </p>
+          <button
+            onClick={handleClearFilters}
+            className="btn btn-secondary btn-sm"
+            id="clearFiltersEmptyBtn"
+          >
+            Clear All Filters
+          </button>
+        </div>
       ) : (
         <div className="task-grid">
-          {tasks.map((task) => {
+          {filteredTasks.map((task) => {
             const taskId = task._id || task.id;
+            const assigneeName = getTaskAssigneeName(task) || 'Unassigned';
+
             return (
               <div key={taskId} className="task-item">
                 <div>
@@ -162,7 +260,7 @@ const fetchTasks = async () => {
                       <strong>Due Date:</strong> {task.dueDate || 'No due date'}
                     </div>
                     <div>
-                      <strong>Assigned To:</strong> {task.assignedUser || task.assignedTo || 'Unassigned'}
+                      <strong>Assigned To:</strong> {assigneeName}
                     </div>
                   </div>
 
